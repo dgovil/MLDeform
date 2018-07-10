@@ -7,7 +7,31 @@ Autodesk Maya 2018 and above.
 
 I encourage others to help improve this repo or to add implementations for other applications.
 
+## Overview
 
+This is a quick ELI5 overview of the system and the methodology used.
+
+Let's say you have a production rig that has lots of complex pose driven deformations. These can be things like complex skinning where each vertice has multiple joints influencing it, or things like pose driven blendshapes, deltamushes and other deformers of that nature.
+
+The cost to process all of these adds up and your character rig can get very slow.
+
+Instead what if the computer could guess where the vertices should be based on the position of the joints?
+This is where machine learning can be useful.
+
+The first step is to reduce our complexity down. We do this by making sure that each vertex is influenced by only one joint and has no other deformers. This already speeds up our deformation speeds of the rig but leaves us with some very ugly deformations. The joints however help give stable deformations and allow us to have direct control over the rig itself.
+
+Next, we make a record for each vertex on how far it is from where it's meant to be. We repeat this for each frame of our sample animation, and also record the rotation and translation values of our joints.
+
+Now we have all the data needed for training our machine learning model.
+For each joint, it is given the rotation and translation values of the joints as an input, and it's given the vertex offsets as the output. Based on that, it figures out the best way to go from the input to the output to guess the vertex offset values.
+
+Finally we save the trained model out and can load it back in to our scene. If everything worked correctly it will be able to move the vertices to their correct positions based on the joint positions.
+
+This can be incredibly quick, giving us a very good approximation of our initial complex rig, while being much quicker.
+
+In fact, with some extra work, you can take this trained model and put it on a mobile device like an iPad and have it running faster than the initial rig could have on a super powered desktop, all while giving reasonably close approximations of the deformations we wanted.
+
+As animators animate more scenes, we can feed more data into the machine learning model and it will get better over time too.
     
 ## Usage
 
@@ -43,6 +67,12 @@ skinning.skin_mesh(mesh)
 skinning.simplify_weights(mesh, fast=False)
 
 ```
+
+There are two types of `simplify_weights` methods.
+
+* Fast: The fast method simply assigns the vertex to the joint with the maximum influence on it. This is pretty quick to run, but may not be the best choice if other deformations are used.
+
+* Not-Fast: This method samples the scene across all the frames, testing each vertex against every joint it is weighted by. This lets us find the joint that provides the closest deformation to the target shape. It can be slower, but will give much better results.
 
 ### Writing Data
 
@@ -123,31 +153,38 @@ Here are projects used as references for this
  
  There are a few Python depencies you will need.
  
- ### Required
+### Required
  
- * **six**
+* **six**
    
-   Needed for supporting Python2 and Python3
-   
- * **tensorflow**
+ Needed for supporting Python2 and Python3
+
+* **tensorflow**
  
-    Required for the actual training and deformers.
+  Required for the actual training and deformers.
     
-    **NOTE:** Some platforms have issues importing Tensorflow into Maya.
+  **NOTE:** Some platforms have issues importing Tensorflow into Maya.
     
-    To workaround this, you need to add a file called `__init__.py` to the `google` package so that it can be imported properly.
+  To workaround this, you need to add a file called `__init__.py` to the `google` package so that it can be imported properly.
     
-    Find the google package by running `from google import protobuf;print(protobuf.__file__)`.
-    This gives you the location of the protobuf folder.
-    The parent directory will be the google package.
+  Find the google package by running `from google import protobuf;print(protobuf.__file__)`.
+  This gives you the location of the protobuf folder.
+  The parent directory will be the google package.
  
-* **pandas**
+ * **pandas**
 
     Necessary for efficient processing of data objects
     
-  ### Optional
+### Optional
   
   
-  * **matplotlib**
+* **matplotlib**
+
+  If you intend to display training plots, this is an optional requirement.
   
-    If you intend to display trainign plots, this is an optional requirement.
+## Related Projects
+
+* [MeshCompare](https://github.com/dgovil/MeshCompare)
+
+  MeshCompare is a set of scripts and plugins for Maya that will color each vertex according to how far it is from the target mesh.
+  This is really useful in visually seeing how far the machine learning predictions are from the target mesh.
