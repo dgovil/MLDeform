@@ -177,8 +177,8 @@ class MLDeformerNode(ompx.MPxDeformerNode):
                         prediction = self.denormalize_prediction(prediction, model)
 
             # Finally save the predicted deltas
-            for i, vtx in enumerate(model.vertices):
-                deltas[vtx * 3:(vtx * 3) + 3] = prediction[i * 3:(i * 3) + 3]
+            for index, vtx in enumerate(model.vertices):
+                deltas[vtx * 3:(vtx * 3) + 3] = prediction[index * 3:(index * 3) + 3]
 
         # Now iterate through the mesh and set the offsets.
         while not iterator.isDone():
